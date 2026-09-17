@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedVision+ - AI-powered Pill Recognition</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark-theme');
+            }
+        })();
+    </script>
+    <div class="ai-grid-background"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="glow-orb orb-3"></div>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo-container">
+                <svg class="logo-asterisk" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="2" x2="12" y2="22"></line>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <line x1="19.07" y1="4.93" x2="4.93" y2="19.07"></line>
+                    <line x1="19.07" y1="19.07" x2="4.93" y2="4.93"></line>
+                </svg>
+                <span class="logo-text">MedVision+</span>
+            </div>
+            
+            <!-- Group everything that drops down into a single drawer container -->
+            <div class="nav-menu-drawer" id="navMenuDrawer">
+                <div class="nav-capsule">
+                    <a href="#" class="nav-capsule-link active">Home</a>
+                    <a href="#sandbox-anchor" class="nav-capsule-link">Sandbox</a>
+                    <a href="#about-anchor" class="nav-capsule-link">About</a>
+                </div>
+                <div class="nav-actions" id="guestNav">
+                    <button class="nav-link-btn" id="navLoginBtn">Login</button>
+                    <button class="book-call-btn" id="navRegisterBtn">GET STARTED &nbsp;↗</button>
+                </div>
+                <div class="nav-actions" id="authNav" style="display: none;">
+                    <button class="nav-link-btn" id="navReminderBtnAuth"><i class="fas fa-bell"></i> Reminders</button>
+                    <button class="nav-link-btn" id="navProfileBtn"><i class="fas fa-user-circle"></i> <span id="navUserName">Profile</span></button>
+                    <button class="book-call-btn" id="navLogoutBtn">LOGOUT &nbsp;↗</button>
+                </div>
+            </div>
+
+            <div class="nav-actions-wrap">
+                <button class="theme-toggle-btn" id="themeToggleBtn" aria-label="Toggle Theme">
+                    <svg class="sun-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    <svg class="moon-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
+                <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle Menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-grid">
+            <div class="hero-content">
+                <div class="trust-pill reveal-up">
+                    <span class="trust-badge">New</span>
+                    <span class="trust-text">Trusted by 45+ expert medical teams</span>
+                </div>
+                
+                <h1 class="hero-title reveal-up">Revolutionizing Healthcare with AI</h1>
+                
+                <p class="hero-description reveal-up">
+                    Bleeding-edge large language models and vision processing to instantly parse pill composition directly from your camera, meticulously cross-checking ingredients against your personalized allergy profile to guarantee safety.
+                </p>
+
+                <div class="hero-actions reveal-up">
+                    <button class="cta-button" id="openSearchBtn">
+                        START DIAGNOSIS
+                    </button>
+                    <a href="#sandbox-anchor" class="secondary-cta-btn">
+                        TRY SANDBOX
+                    </a>
+                </div>
+            </div>
+
+            <div class="hero-mockup reveal-up">
+                <div class="dashboard-frame">
+                    <div class="dashboard-header">
+                        <div class="window-controls">
+                            <span class="dot dot-close"></span>
+                            <span class="dot dot-minimize"></span>
+                            <span class="dot dot-maximize"></span>
+                        </div>
+                        <span class="dashboard-title-text">MedVision+ AI Safety Console</span>
+                    </div>
+                    <div class="dashboard-body">
+                        <div class="mock-scan-grid">
+                            <div class="mock-scan-left">
+                                <div class="mock-img-wrapper">
+                                    <div class="mock-scanning-pill-pack">
+                                        <div class="pill-capsule red-pill"></div>
+                                        <div class="pill-capsule yellow-pill"></div>
+                                    </div>
+                                    <div class="mock-bounding-box">
+                                        <span class="mock-box-label">Ceflox-D (Ciprofloxacin)</span>
+                                    </div>
+                                    <div class="mock-laser"></div>
+                                </div>
+                            </div>
+                            <div class="mock-scan-right">
+                                <div class="mock-alert-card">
+                                    <div class="mock-alert-header">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                        <span>Allergen Clash Detected</span>
+                                    </div>
+                                    <p class="mock-alert-desc">Contains <strong>Ciprofloxacin</strong> which clashes with your Penicillin / Quinolone allergy profile.</p>
+                                </div>
+                                <div class="mock-suggestions">
+                                    <span class="suggestion-title">Recommended Safe Alternatives</span>
+                                    <div class="suggestion-item">
+                                        <span>Amoxicillin (500mg)</span>
+                                        <span class="price-tag">₹45.00</span>
+                                    </div>
+                                    <div class="suggestion-item">
+                                        <span>Azithromycin (500mg)</span>
+                                        <span class="price-tag">₹62.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Trust Logos Bottom Row -->
+        <div class="brand-row reveal-up">
+            <div class="brand-row-container">
+                <div class="brand-intro">
+                    <span>Trusted by<br>medical teams<br>and hospitals</span>
+                </div>
+                <div class="brand-logos">
+                    <div class="brand-logo-item">
+                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+                        <span>Invert</span>
+                    </div>
+                    <div class="brand-logo-item">
+                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                        <span>hues</span>
+                    </div>
+                    <div class="brand-logo-item">
+                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                        <span>Pollinate</span>
+                    </div>
+                    <div class="brand-logo-item">
+                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M4.5 16.5c-1.5 1.26-2.5 3.19-2.5 5.5h20c0-2.31-1-4.24-2.5-5.5M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>
+                        <span>Acme</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="features-container">
+            <div class="feature-card glass-card reveal-up">
+                <div class="card-glow"></div>
+                <svg class="feature-svg" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18h8"/><path d="M3 22h18"/><path d="M14 22a7 7 0 1 0-14 0"/><path d="M9 14h2"/><path d="M9 12a3 3 0 0 1-3-3V6h6v3a3 3 0 0 1-3 3Z"/><path d="M12 6h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2"/><path d="M9 2h6"/></svg>
+                <h3 class="feature-title">LLM Deep Extraction</h3>
+                <p class="feature-text">
+                    Advanced Groq-powered AI reads and understands complex pharmaceutical compositions accurately.
+                </p>
+            </div>
+            
+            <div class="feature-card glass-card reveal-up">
+                <div class="card-glow"></div>
+                <svg class="feature-svg" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+                <h3 class="feature-title">Smart Health Profiles</h3>
+                <p class="feature-text">
+                    Secure JWT authentication lets you maintain an evolving dashboard of your medical constraints.
+                </p>
+            </div>
+            
+            <div class="feature-card glass-card reveal-up">
+                <div class="card-glow"></div>
+                <svg class="feature-svg" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                <h3 class="feature-title">Allergy Detection</h3>
+                <p class="feature-text">
+                    Instant clash-detection algorithms automatically warn you if a scanned medicine violates your profile.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Safety Sandbox Section -->
+    <section class="sandbox-section reveal-up" id="sandbox-anchor">
+        <div class="sandbox-container glass-card">
+            <div class="sandbox-glow"></div>
+            <div class="sandbox-header">
+                <h2 class="sandbox-title"><i class="fas fa-flask-vial neon-icon"></i> Instant Safety Sandbox</h2>
+                <p class="sandbox-subtitle">Experience our real-time allergy clash algorithm. Pick an allergy, type a drug, and watch the system cross-reference them instantly.</p>
+            </div>
+            <div class="sandbox-controls">
+                <div class="sandbox-input-wrapper">
+                    <label for="sandboxAllergy"><i class="fas fa-allergies"></i> Your Allergen Profile</label>
+                    <select id="sandboxAllergy" class="sandbox-select">
+                        <option value="none">No allergies documented</option>
+                        <option value="penicillin">Penicillin (Beta-lactams)</option>
+                        <option value="aspirin">Aspirin (NSAIDs)</option>
+                        <option value="sulfa">Sulfa Drugs (Sulfonamides)</option>
+                    </select>
+                </div>
+                <div class="sandbox-input-wrapper">
+                    <label for="sandboxDrugInput"><i class="fas fa-pills"></i> Target Medicine</label>
+                    <input type="text" id="sandboxDrugInput" class="sandbox-input" placeholder="Type name (e.g. Paracetamol, Ceflox, Ecotrin)...">
+                </div>
+                <button id="sandboxCheckBtn" class="sandbox-btn">
+                    <i class="fas fa-shield-halved"></i> Run Clash Check
+                </button>
+            </div>
+            <div id="sandboxResult" class="sandbox-result-container" style="display: none;"></div>
+        </div>
+    </section>
+
+    <!-- How It Works Section (Static) -->
+    <section class="pill-scan-section">
+        <div class="scan-container">
+            <h2 class="scan-title">How MedVision+ Works</h2>
+            <div class="static-steps">
+                <div class="static-step">
+                    <div class="step-icon-wrap"><i class="fas fa-camera"></i></div>
+                    <div class="step-number">01</div>
+                    <h3>Snap or Search</h3>
+                    <p>Upload a pill image or type a medicine name to get started instantly.</p>
+                </div>
+                <div class="step-divider"><i class="fas fa-chevron-right"></i></div>
+                <div class="static-step">
+                    <div class="step-icon-wrap"><i class="fas fa-brain"></i></div>
+                    <div class="step-number">02</div>
+                    <h3>AI Analysis</h3>
+                    <p>Groq-powered LLM extracts full composition, dosage, and usage data.</p>
+                </div>
+                <div class="step-divider"><i class="fas fa-chevron-right"></i></div>
+                <div class="static-step">
+                    <div class="step-icon-wrap"><i class="fas fa-shield-alt"></i></div>
+                    <div class="step-number">03</div>
+                    <h3>Safety Check</h3>
+                    <p>Cross-checks ingredients against your personal allergy profile in real-time.</p>
+                </div>
+                <div class="step-divider"><i class="fas fa-chevron-right"></i></div>
+                <div class="static-step">
+                    <div class="step-icon-wrap"><i class="fas fa-bell"></i></div>
+                    <div class="step-number">04</div>
+                    <h3>Get Reminded</h3>
+                    <p>Set medicine reminders and get alerted right on time, every time.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about-section" id="about-anchor">
+        <div class="about-content">
+            <h2 class="about-title reveal-up">About MedVision+</h2>
+            <p class="about-text reveal-up">
+                MedVision+ represents the next generation of personalized healthcare technology. What started as simple optical object recognition has scaled into a secure, full-stack AI ecosystem. By coupling blazing-fast hardware inferencing directly with your personal allergy constraints, we drastically minimize the risk of catastrophic medication errors.
+            </p>
+            
+            <div class="stats-container reveal-up">
+                <div class="stat-item holographic-stat">
+                    <span class="stat-number neon-text">&lt;1min</span>
+                    <span class="stat-label">Response Time</span>
+                </div>
+                <div class="stat-item holographic-stat">
+                    <span class="stat-number neon-text">AI</span>
+                    <span class="stat-label">Powered Backend</span>
+                </div>
+                <div class="stat-item holographic-stat">
+                    <span class="stat-number neon-text">Zero</span>
+                    <span class="stat-label">Allergy Breaches</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p class="footer-text">© MedVision+. Advancing healthcare through AI innovation.</p>
+    </footer>
+
+    <!-- Medicine Search Modal -->
+    <div id="searchModal" class="modal">
+        <div class="modal-content glass-card">
+            <span class="close-modal">&times;</span>
+            <h2 class="modal-title">Medicine Information Search</h2>
+            
+            <!-- Search Method Tabs -->
+            <div class="search-method-tabs">
+                <button id="textSearchTab" class="method-tab active">
+                    <i class="fas fa-keyboard"></i>
+                    <span>Search by Name</span>
+                </button>
+                <button id="imageSearchTab" class="method-tab">
+                    <i class="fas fa-camera"></i>
+                    <span>Upload Image</span>
+                </button>
+            </div>
+            
+            <!-- Search Sections -->
+            <div class="search-sections">
+                <!-- Text Search Section -->
+                <div id="textSearchSection" class="search-method active">
+                    <div class="search-input-group">
+                        <div class="input-wrapper">
+                            <i class="fas fa-pills input-icon"></i>
+                            <input type="text" id="medicineInput" placeholder="Enter medicine name (e.g., Paracetamol)" class="search-input">
+                        </div>
+                        <button id="searchBtn" class="action-btn primary">
+                            <i class="fas fa-search"></i>
+                            Search
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Image Upload Section -->
+                <div id="imageSearchSection" class="search-method">
+                    <div class="upload-section">
+                        <div class="upload-zone" id="uploadArea">
+                            <div class="upload-content">
+                                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                                <h4 class="upload-title">Upload Medicine Image</h4>
+                                <p class="upload-description">Click to browse or drag & drop your image here</p>
+                                <div class="upload-specs">
+                                    <span class="spec-item"><i class="fas fa-check"></i> JPG, PNG supported</span>
+                                    <span class="spec-item"><i class="fas fa-check"></i> Max 5MB</span>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                        <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
+                        <div style="margin-top: 15px; display: flex; justify-content: center;">
+                            <button id="cameraBtn" type="button" class="action-btn secondary" style="width: auto; background: rgba(13, 148, 136, 0.1); border: 1px solid rgba(13, 148, 136, 0.3); color: #0D9488;">
+                                <i class="fas fa-camera"></i> Open Camera
+                            </button>
+                        </div>
+                        <button id="uploadBtn" class="action-btn primary" disabled style="margin-top: 15px;">
+                            <i class="fas fa-eye"></i>
+                            Analyze Image
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Results Container -->
+            <div id="searchResults" class="results-container"></div>
+        </div>
+    </div>
+
+    <!-- Auth Modals -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content glass-card auth-modal">
+            <span class="close-modal">&times;</span>
+            <h2 class="modal-title">Welcome Back</h2>
+            <div class="input-wrapper">
+                <i class="fas fa-envelope input-icon"></i>
+                <input type="email" id="loginEmail" placeholder="Email Address" class="search-input">
+            </div>
+            <div class="input-wrapper" style="margin-top: 15px;">
+                <i class="fas fa-lock input-icon"></i>
+                <input type="password" id="loginPassword" placeholder="Password" class="search-input">
+            </div>
+            <button id="doLoginBtn" class="action-btn primary" style="width: 100%; margin-top: 20px;">Sign In</button>
+            <p style="text-align:center; margin-top: 15px; color:#a0aec0;">Don't have an account? <a href="#" id="switchToRegister" style="color:#4A90E2;">Register</a></p>
+        </div>
+    </div>
+
+    <div id="registerModal" class="modal">
+        <div class="modal-content glass-card auth-modal">
+            <span class="close-modal">&times;</span>
+            <h2 class="modal-title">Create Account</h2>
+            <div class="input-wrapper">
+                <i class="fas fa-user input-icon"></i>
+                <input type="text" id="regName" placeholder="Full Name" class="search-input">
+            </div>
+            <div class="input-wrapper" style="margin-top: 15px;">
+                <i class="fas fa-envelope input-icon"></i>
+                <input type="email" id="regEmail" placeholder="Email Address" class="search-input">
+            </div>
+            <div class="input-wrapper" style="margin-top: 15px;">
+                <i class="fas fa-lock input-icon"></i>
+                <input type="password" id="regPassword" placeholder="Password (min 6 chars)" class="search-input">
+            </div>
+            <button id="doRegisterBtn" class="action-btn primary" style="width: 100%; margin-top: 20px;">Sign Up</button>
+            <p style="text-align:center; margin-top: 15px; color:#a0aec0;">Already have an account? <a href="#" id="switchToLogin" style="color:#4A90E2;">Log In</a></p>
+        </div>
+    </div>
+
+    <!-- Profile & Allergy Dashboard Modal -->
+    <div id="profileModal" class="modal">
+        <div class="modal-content glass-card profile-modal-v2">
+            <span class="close-modal">&times;</span>
+
+            <!-- Header Banner -->
+            <div class="profile-header-banner">
+                <div class="profile-avatar-ring">
+                    <div class="profile-avatar"><i class="fas fa-user"></i></div>
+                </div>
+                <div class="profile-header-info">
+                    <h2 id="profileName">User Profile</h2>
+                    <p id="profileEmail"></p>
+                </div>
+
+            </div>
+
+            <!-- Body -->
+            <div class="profile-body">
+                <div class="allergy-panel">
+                    <div class="allergy-panel-header">
+                        <div class="allergy-panel-title">
+                            <i class="fas fa-dna"></i>
+                            <span>Medical Allergy Profile</span>
+                        </div>
+                        <div class="allergy-count-badge" id="allergyCountBadge">0 Logged</div>
+                    </div>
+
+                    <p class="allergy-panel-desc">Our AI Health Guard cross-checks every medicine scan against your allergy profile in real-time.</p>
+
+                    <div class="allergy-input-row">
+                        <div class="allergy-input-wrap">
+                            <i class="fas fa-plus-circle allergy-input-icon"></i>
+                            <input type="text" id="newAllergyInput" placeholder="Add allergy (e.g. Penicillin, Aspirin)" class="allergy-input" />
+                        </div>
+                        <button id="addAllergyBtn" class="allergy-add-btn">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                    </div>
+
+                    <div id="allergyTagsContainer" class="allergy-tags-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reminder Modal -->
+    <div id="reminderModal" class="modal">
+        <div class="modal-content glass-card" style="max-width:500px; padding:0; border-radius:20px; overflow:hidden;">
+            <span class="close-modal">&times;</span>
+            <div style="padding:30px 30px 0;">
+                <h2 class="modal-title" style="padding:0; border:none; margin-bottom:20px;"><i class="fas fa-bell" style="color:#00FFFF; margin-right:10px;"></i>Medicine Reminders</h2>
+            </div>
+            <div style="padding:0 30px 10px;">
+                <div style="display:flex; gap:10px; margin-bottom:10px;">
+                    <div class="input-wrapper" style="flex:2;">
+                        <i class="fas fa-pills input-icon"></i>
+                        <input type="text" id="reminderMedicine" placeholder="Medicine name" class="search-input">
+                    </div>
+                    <div class="input-wrapper" style="flex:1;">
+                        <i class="fas fa-clock input-icon"></i>
+                        <input type="time" id="reminderTime" class="search-input" style="padding-left:45px;">
+                    </div>
+                </div>
+                <button id="addReminderBtn" class="action-btn primary" style="width:100%; margin-bottom:10px;">
+                    <i class="fas fa-plus"></i> Add Reminder
+                </button>
+                <button onclick="playFaahLoop()" class="action-btn" style="width:100%; margin-bottom:10px; background:rgba(0,255,255,0.1); border:1px solid rgba(0,255,255,0.3); color:#00FFFF;">
+                    <i class="fas fa-volume-up"></i> Test Alarm Sound
+                </button>
+                <button onclick="stopFaahLoop()" class="action-btn" style="width:100%; margin-bottom:20px; background:rgba(231,76,60,0.1); border:1px solid rgba(231,76,60,0.3); color:#ff6b81;">
+                    <i class="fas fa-stop"></i> Stop Alarm Sound
+                </button>
+            </div>
+            <div id="reminderList" style="max-height:300px; overflow-y:auto; padding:0 30px 30px;"></div>
+        </div>
+    </div>
+
+    <script>
+        window.BACKEND_URL = "{{ backend_url }}";
+    </script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=999"></script>
+</body>
+</html>
