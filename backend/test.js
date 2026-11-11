@@ -1,6 +1,12 @@
+require('dotenv').config();
 const axios = require('axios');
 (async () => {
   try {
+    const apiKey = process.env.NV_API_KEY || process.env.NVIDIA_API_KEY;
+    if (!apiKey) {
+      console.error('Please set NV_API_KEY in your .env file');
+      process.exit(1);
+    }
     const response = await axios.post('https://integrate.api.nvidia.com/v1/chat/completions', {
       model: 'deepseek-ai/deepseek-v3.2',
       messages: [{ role: 'user', content: 'Say hello in json' }],
@@ -9,7 +15,7 @@ const axios = require('axios');
       chat_template_kwargs: { thinking: true }
     }, {
       headers: {
-        'Authorization': 'Bearer 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',
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       }
     });

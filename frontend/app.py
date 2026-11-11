@@ -3,7 +3,7 @@ import requests, json, os
 
 app = Flask(__name__)
 
-BACKEND_URL = os.getenv('BACKEND_URL', 'https://medvision-backend-egoh.onrender.com').rstrip('/')
+BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:3000').rstrip('/')
 MEDICINE_API_URL = f'{BACKEND_URL}/api/medicine'
 REMINDERS_FILE = os.path.join(os.path.dirname(__file__), 'reminders.json')
 
@@ -19,7 +19,7 @@ def save_reminders(reminders):
 
 @app.route('/')
 def index():
-    backend_url = os.getenv('BACKEND_URL', 'https://medvision-backend-egoh.onrender.com').rstrip('/')
+    backend_url = os.getenv('BACKEND_URL', 'http://localhost:3000').rstrip('/')
     return render_template('index.html', backend_url=backend_url)
 
 @app.route('/api/medicine/search', methods=['GET'])
@@ -32,14 +32,21 @@ def search_medicine():
     auth_header = request.headers.get('Authorization')
     if auth_header:
         headers['Authorization'] = auth_header
+
+    params = {'name': medicine_name}
+    allergies = request.args.get('allergies')
+    if allergies:
+        params['allergies'] = allergies
         
     try:
-        response = requests.get(f'{MEDICINE_API_URL}/info', params={'name': medicine_name}, headers=headers)
+        response = requests.get(f'{MEDICINE_API_URL}/info', params=params, headers=headers, timeout=45)
         try:
             data = response.json()
         except ValueError:
             return jsonify({'error': f'Backend service is temporarily unavailable (Status {response.status_code}). Please try again.'}), 502
         return jsonify(data), response.status_code
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'Medicine search timed out. Please try again.'}), 504
     except requests.exceptions.ConnectionError:
         return jsonify({'error': 'Medicine API service is not available. Please ensure the backend is running on port 3000.'}), 503
     except Exception as e:
@@ -61,12 +68,18 @@ def upload_medicine_image():
             headers['Authorization'] = auth_header
             
         files = {'image': (file.filename, file.stream, file.mimetype)}
-        response = requests.post(f'{MEDICINE_API_URL}/upload', files=files, headers=headers)
+        data = {}
+        if 'allergies' in request.form:
+            data['allergies'] = request.form['allergies']
+
+        response = requests.post(f'{MEDICINE_API_URL}/upload', files=files, data=data, headers=headers, timeout=75)
         try:
             data = response.json()
         except ValueError:
             return jsonify({'error': f'Backend service is temporarily unavailable (Status {response.status_code}). Please try again.'}), 502
         return jsonify(data), response.status_code
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'Image analysis timed out. Please try again with a smaller or clearer image.'}), 504
     except requests.exceptions.ConnectionError:
         return jsonify({'error': 'Medicine API service is not available. Please ensure the backend is running on port 3000.'}), 503
     except Exception as e:

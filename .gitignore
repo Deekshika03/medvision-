@@ -1,8 +1,47 @@
+# Dependencies
 node_modules/
+mcp-server/node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Environment files
 .env
+.env.*
+*.env
+backend/.env
+frontend/.env
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
 __pycache__/
-*.pyc
-uploads/
-*.mp3
+*.py[cod]
+*$py.class
+venv/
+.venv/
+
+# Build and IDE
 .expo/
-package-lock.json
+.DS_Store
+.DS_Store?
+._*
+.idea/
+.vscode/
+
+# Audio
+*.mp3
+*.wav
+!frontend/static/nokia.mp3
+
+# Uploads
+uploads/
+**/uploads/*
+!**/uploads/.gitkeep

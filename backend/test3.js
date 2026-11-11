@@ -1,4 +1,11 @@
+require('dotenv').config();
 const http = require('https');
+const apiKey = process.env.NV_API_KEY || process.env.NVIDIA_API_KEY;
+if (!apiKey) {
+  console.error('Please set NV_API_KEY in your .env file');
+  process.exit(1);
+}
+
 const data = JSON.stringify({
   model: 'deepseek-ai/deepseek-v3.2',
   messages: [{ role: 'user', content: 'Say hello in json' }],
@@ -10,7 +17,7 @@ const options = {
   path: '/v1/chat/completions',
   method: 'POST',
   headers: {
-    'Authorization': 'Bearer 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',
+    'Authorization': `Bearer ${apiKey}`,
     'Content-Type': 'application/json',
     'Content-Length': data.length
   }

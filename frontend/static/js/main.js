@@ -161,19 +161,36 @@ async function analyzeImage() {
     // Hide upload section and tabs, then show loading
     imageSearchSection.style.display = 'none';
     searchMethodTabs.style.display = 'none';
-    searchResults.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Optimizing image size...</div>';
+    searchResults.innerHTML = '<div class="loading" id="loadingProgressText"><i class="fas fa-spinner fa-spin"></i> Optimizing image size...</div>';
     uploadBtn.disabled = true;
 
     let fileToUpload = selectedFile;
     try {
         fileToUpload = await compressImage(selectedFile, 800, 800, 0.7);
-        searchResults.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Analyzing image and extracting medicine name...</div>';
+        searchResults.innerHTML = '<div class="loading" id="loadingProgressText"><i class="fas fa-spinner fa-spin"></i> Analyzing image with AI Vision...</div>';
     } catch (compressErr) {
         console.warn('Image compression failed, proceeding with original file:', compressErr.message);
+        searchResults.innerHTML = '<div class="loading" id="loadingProgressText"><i class="fas fa-spinner fa-spin"></i> Analyzing image with AI Vision...</div>';
     }
     
     const formData = new FormData();
     formData.append('image', fileToUpload);
+    if (currentUser && currentUser.allergies && currentUser.allergies.length > 0) {
+        formData.append('allergies', currentUser.allergies.join(','));
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 70000);
+
+    const timer1 = setTimeout(() => {
+        const text = document.getElementById('loadingProgressText');
+        if (text) text.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Identifying medicine and reading label...';
+    }, 4000);
+
+    const timer2 = setTimeout(() => {
+        const text = document.getElementById('loadingProgressText');
+        if (text) text.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Fetching dosage, uses, and safety profile...';
+    }, 9000);
     
     try {
         const headers = {};
@@ -183,7 +200,8 @@ async function analyzeImage() {
         const response = await fetch('/api/medicine/upload', {
             method: 'POST',
             body: formData,
-            headers: headers
+            headers: headers,
+            signal: controller.signal
         });
         
         const data = await response.json();
@@ -194,11 +212,18 @@ async function analyzeImage() {
         
         displayResults(data, true);
     } catch (error) {
-        searchResults.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle"></i> ${error.message}</div>`;
+        let msg = error.message;
+        if (error.name === 'AbortError') {
+            msg = 'Analysis timed out. Please try again with a clearer image or check your network.';
+        }
+        searchResults.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle"></i> ${msg}</div>`;
         // Show upload section again on error
         imageSearchSection.style.display = '';
         searchMethodTabs.style.display = 'flex';
     } finally {
+        clearTimeout(timeoutId);
+        clearTimeout(timer1);
+        clearTimeout(timer2);
         uploadBtn.disabled = false;
     }
 }
@@ -247,7 +272,12 @@ async function searchMedicine() {
         const token = localStorage.getItem('medvision_token');
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        const response = await fetch(`/api/medicine/search?name=${encodeURIComponent(medicineName)}`, { headers });
+        let searchUrl = `/api/medicine/search?name=${encodeURIComponent(medicineName)}`;
+        if (currentUser && currentUser.allergies && currentUser.allergies.length > 0) {
+            searchUrl += `&allergies=${encodeURIComponent(currentUser.allergies.join(','))}`;
+        }
+
+        const response = await fetch(searchUrl, { headers });
         const data = await response.json();
         
         if (!response.ok) {
@@ -292,46 +322,55 @@ function displayResults(data, isImageSearch = false) {
     
     // OCR Results (for image search)
     if (isImageSearch && ocrInfo) {
-        html += '<div class="result-section" style="background: rgba(13, 148, 136, 0.1); border: 1px solid rgba(13, 148, 136, 0.3);">';
-        html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">';
-        html += '<h3 style="margin: 0;"><i class="fas fa-eye"></i> Image Analysis Results</h3>';
-        html += '<button onclick="resetSearch()" style="padding: 8px 16px; background: rgba(13, 148, 136,0.2); border: 1px solid rgba(13, 148, 136,0.4); color: #0D9488; border-radius: 8px; cursor: pointer; font-size: 12px; transition: all 0.3s;" onmouseover="this.style.background=\'rgba(13, 148, 136,0.3)\'" onmouseout="this.style.background=\'rgba(13, 148, 136,0.2)\'">';
+        let cleanDetected = ocrInfo.detected_medicine || '';
+        if (cleanDetected.length > 35 || cleanDetected.toLowerCase().includes('the user') || cleanDetected.toLowerCase().includes('looking at')) {
+            const quoted = cleanDetected.match(/"([A-Za-z0-9\-\+ ]{2,30})"/);
+            if (quoted) {
+                cleanDetected = quoted[1];
+            } else {
+                cleanDetected = cleanDetected.split(/[\n\.,]/)[0].replace(/^.*?brand name is (?:clearly )?/i, '').trim();
+            }
+        }
+        cleanDetected = cleanDetected.replace(/^["'`]+|["'`]+$/g, '').trim();
+
+        html += '<div class="result-section" style="background: rgba(13, 148, 136, 0.15); border: 1px solid rgba(45, 212, 191, 0.35); border-radius: 12px; padding: 18px 24px; margin-bottom: 20px;">';
+        html += '<div style="display: flex; justify-content: space-between; align-items: center; gap: 15px;">';
+        html += '<div>';
+        html += '<div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #2DD4BF; letter-spacing: 0.8px; margin-bottom: 6px;"><i class="fas fa-pills"></i> Detected Medicine</div>';
+        html += `<div style="font-size: 24px; font-weight: 700; color: #FFFFFF !important; line-height: 1.25; text-shadow: 0 1px 3px rgba(0,0,0,0.6);">${cleanDetected}</div>`;
+        html += '</div>';
+        html += '<button onclick="resetSearch()" style="padding: 9px 18px; background: rgba(13, 148, 136, 0.15); border: 1px solid rgba(13, 148, 136, 0.35); color: #0D9488; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; white-space: nowrap; transition: all 0.2s;" onmouseover="this.style.background=\'rgba(13, 148, 136, 0.25)\'" onmouseout="this.style.background=\'rgba(13, 148, 136, 0.15)\'">';
         html += '<i class="fas fa-search"></i> Search Another';
         html += '</button>';
         html += '</div>';
-        html += '<div class="info-grid">';
-        html += `<div class="info-item"><div class="info-label">Detected Medicine</div><div class="info-value">${ocrInfo.detected_medicine}</div></div>`;
-        html += `<div class="info-item"><div class="info-label">OCR Confidence</div><div class="info-value">${ocrInfo.confidence}%</div></div>`;
-        html += '</div>';
-        
-        // Manual correction option if confidence is low
-        if (ocrInfo.confidence < 80) {
-            html += '<div style="margin-top: 15px; padding: 10px; background: rgba(255, 165, 0, 0.1); border-radius: 8px;">';
-            html += '<p style="color: #FFA726; font-size: 13px; margin-bottom: 10px;"><i class="fas fa-exclamation-triangle"></i> Low confidence detected. You can correct the medicine name:</p>';
-            html += '<div style="display: flex; gap: 10px;">';
-            html += `<input type="text" id="correctedName" value="${ocrInfo.detected_medicine}" style="flex: 1; padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(13, 148, 136,0.3); border-radius: 5px; color: white;">`;
-            html += '<button onclick="searchCorrectedName()" style="padding: 8px 15px; background: linear-gradient(135deg, #0F766E 0%, #0D9488 100%); border: none; color: white; border-radius: 5px; cursor: pointer;">Search</button>';
-            html += '</div>';
-            html += '</div>';
-        }
-        
-        if (ocrInfo.extracted_text) {
-            html += `<p style="margin-top: 10px; font-size: 12px; color: #888;"><strong>Full extracted text:</strong> ${ocrInfo.extracted_text.substring(0, 200)}${ocrInfo.extracted_text.length > 200 ? '...' : ''}</p>`;
-        }
         html += '</div>';
     }
     
     // Allergy Alert
-    if (data.allergy_alert) {
+    if (data.allergy_alert || (currentUser && currentUser.allergies && currentUser.allergies.length > 0)) {
         // Robust state parsing for the API boolean outputs
         let isSafe = true;
-        const rawWarning = data.allergy_alert.warning;
+        let conflictDetails = data.allergy_alert ? data.allergy_alert.details : null;
+        const rawWarning = data.allergy_alert ? data.allergy_alert.warning : false;
         
         if (typeof rawWarning === 'boolean') {
             isSafe = !rawWarning; // If warning is true, it is NOT safe.
         } else if (typeof rawWarning === 'string') {
             const warnStr = rawWarning.toLowerCase().trim();
             isSafe = (warnStr === 'false' || warnStr.includes('safe to take') || warnStr === '');
+        }
+
+        // Deterministic client-side safety guard against user profile
+        if (currentUser && currentUser.allergies && currentUser.allergies.length > 0) {
+            const medText = `${medicineInfo.brand_name || ''} ${medicineInfo.composition || ''} ${ocrInfo?.detected_medicine || ''}`.toLowerCase();
+            for (const allergy of currentUser.allergies) {
+                const a = (allergy || '').trim().toLowerCase();
+                if (a && medText.includes(a)) {
+                    isSafe = false;
+                    conflictDetails = `⚠️ DANGER: Contains "${allergy}" which conflicts directly with your logged allergy profile! Do NOT take without medical advice.`;
+                    break;
+                }
+            }
         }
 
         const statusClass = isSafe ? 'allergy-safe' : 'allergy-danger';
@@ -344,8 +383,8 @@ function displayResults(data, isImageSearch = false) {
         html += `       <h3 class="allergy-alert-title"><i class="fas fa-heartbeat"></i> Allergy Analysis</h3>`;
         html += `       <p class="allergy-alert-warning">${displayWarning}</p>`;
         
-        if (!isSafe && data.allergy_alert.details) {
-            html += `       <p class="allergy-alert-details"><i class="fas fa-info-circle"></i> ${data.allergy_alert.details}</p>`;
+        if (!isSafe && conflictDetails) {
+            html += `       <p class="allergy-alert-details"><i class="fas fa-info-circle"></i> ${conflictDetails}</p>`;
         }
         
         html += `   </div>`;
@@ -551,7 +590,13 @@ const authNav = document.getElementById('authNav');
 const navUserName = document.getElementById('navUserName');
 
 // API URL (Node Server)
-const AUTH_API = (window.BACKEND_URL || 'https://medvision-backend-egoh.onrender.com').replace(/\/$/, '') + '/api';
+let resolvedBackendUrl = window.BACKEND_URL || 'http://localhost:3000';
+if (window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    if (resolvedBackendUrl.includes('localhost') || resolvedBackendUrl.includes('127.0.0.1')) {
+        resolvedBackendUrl = `${window.location.protocol}//${window.location.hostname}:3000`;
+    }
+}
+const AUTH_API = resolvedBackendUrl.replace(/\/$/, '') + '/api';
 
 // State
 let currentUser = null;

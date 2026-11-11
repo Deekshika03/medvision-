@@ -12,14 +12,18 @@ class OCRService {
       const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
       
       const payload = {
-        model: "meta/llama-3.2-90b-vision-instruct",
+        model: "mistralai/mistral-large-4-1t-a52b",
         messages: [
+          {
+            role: "system",
+            content: "You are an OCR and pharmaceutical recognition engine. Output ONLY valid JSON in this exact structure: {\"name\": \"MedicineName\"}. Do not write explanations, sentences, or thoughts."
+          },
           {
             role: "user",
             content: [
               {
                 type: "text",
-                text: "You are an expert pharmaceutical vision engine. Analyze this image of a medicine container (bottle, packet, blister pack). Identify and return ONLY the fundamental brand name or primary active ingredient. Do not include dosage (like 500mg), manufacturer paths, expiry dates, or conversation formatting. Just return the raw medicine name. If it is illegible, return exactly: UNKNOWN"
+                text: "Extract the exact brand name or active medicine name from this image. Output JSON only: {\"name\": \"MedicineName\"}"
               },
               {
                 type: "image_url",
@@ -34,7 +38,7 @@ class OCRService {
         temperature: 0.00
       };
 
-      const nvidiaApiKey = process.env.NV_API_KEY;
+      const nvidiaApiKey = process.env.NV_API_KEY || process.env.NVIDIA_TEXT_KEY || process.env.NVIDIA_API_KEY;
       if (!nvidiaApiKey) {
         throw new Error("NV_API_KEY environment variable is missing.");
       }
@@ -46,21 +50,51 @@ class OCRService {
           headers: {
             'Authorization': `Bearer ${nvidiaApiKey}`,
             'Content-Type': 'application/json'
-          }
+          },
+          timeout: 45000
         }
       );
 
-      const rawContent = response.data.choices[0].message.content;
-      const medicineName = rawContent.trim().replace(/^"|"$/g, '').replace(/\.$/, ''); // Clean up any quotes or trailing periods
-      
-      if (!medicineName || medicineName === 'UNKNOWN') {
+      const rawContent = response.data.choices[0].message.content || response.data.choices[0].message.reasoning_content || '';
+      if (!rawContent) {
+        throw new Error('NVIDIA Vision returned empty response.');
+      }
+
+      // 1. Try parsing JSON format: {"name": "..."}
+      let medicineName = '';
+      const jsonMatch = rawContent.match(/\{[\s\S]*?"name"\s*:\s*"([^"]+)"[\s\S]*?\}/);
+      if (jsonMatch) {
+        medicineName = jsonMatch[1].trim();
+      } else {
+        // 2. If model returned text with quoted brand name, e.g. 'clearly "Erytop"'
+        const quotedMatch = rawContent.match(/"([A-Za-z0-9\-\+ ]{2,35})"/);
+        if (quotedMatch && !quotedMatch[1].toLowerCase().includes('name') && !quotedMatch[1].toLowerCase().includes('image')) {
+          medicineName = quotedMatch[1].trim();
+        } else {
+          // 3. Fallback: strip conversational explanations
+          let cleaned = rawContent
+            .replace(/The user wants.*?\. /gi, '')
+            .replace(/Looking at the.*?brand name is (?:clearly )?/gi, '')
+            .replace(/The brand name is (?:clearly )?/gi, '')
+            .replace(/The medicine name is (?:clearly )?/gi, '')
+            .replace(/^["'`]|["'`]$/g, '')
+            .split(/[\n\.,]/)[0]
+            .trim();
+          medicineName = cleaned;
+        }
+      }
+
+      // Remove any lingering quotes
+      medicineName = medicineName.replace(/^["'`\s]+|["'`\s]+$/g, '').trim();
+
+      if (!medicineName || medicineName.toUpperCase() === 'UNKNOWN') {
          throw new Error('NVIDIA Vision could not confidently decode a medicine name from this image.');
       }
 
       console.log(`[NVIDIA Vision] Detected: ${medicineName}`);
 
       return {
-        fullText: "NVIDIA Vision Multimodal Evaluation",
+        fullText: "",
         medicineName: medicineName,
         confidence: 99
       };
